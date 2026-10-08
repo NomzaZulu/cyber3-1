@@ -1,5 +1,5 @@
 {
-  "suite": "CyberGuard Evaluation Suite v1",
+  "suite": "CyberGuard Evaluation Suite v2",
   "scope": "Independent evaluation of existing detection services; production code is not modified by the benchmark.",
   "digital_impersonation": {
     "module": "Digital Impersonation",
@@ -365,7 +365,7 @@
   },
   "phishing": {
     "module": "Phishing",
-    "status": "not_locally_benchmarked",
-    "reason": "The current repository connects phishing inference to the configured Hugging Face Space from the browser and does not contain a local labelled phishing evaluation runner. No phishing accuracy/precision/recall/F1 is invented by this suite."
+    "status": "skipped",
+    "reason": "Phishing benchmark was skipped with --skip-phishing."
   }
 }
