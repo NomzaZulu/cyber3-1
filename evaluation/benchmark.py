@@ -1,22 +1,29 @@
-"""CyberGuard evaluation suite.
+"""CyberGuard unified evaluation suite.
 
-This module is intentionally separate from the live application. It calls the
-existing Digital Impersonation and Account Takeover services without changing
-those engines, APIs, frontend code, scoring rules, or production datasets.
+This module is intentionally separate from the live application. It evaluates
+Digital Impersonation, Account Takeover, and the configured remote Phishing
+inference service without changing production detection code, APIs, scoring
+rules, or production datasets.
+
+Evaluation sources:
+- Digital Impersonation: bundled labelled CSV.
+- Account Takeover: frozen controlled synthetic scenario set.
+- Phishing: balanced sample from the public ealvaradob/phishing-dataset test
+  set sent through the same Hugging Face Space and /analyze_message endpoint
+  used by the CyberGuard frontend.
 
 Important:
-- Digital Impersonation is evaluated against the bundled labelled CSV.
-- Account Takeover is evaluated against a frozen, controlled synthetic
-  scenario set stored in evaluation/ato_evaluation_cases.json.
-- The ATO metrics are engineering-validation metrics, not real-world or
-  independently collected production accuracy.
-- Phishing is not executed here because the current phishing implementation
-  runs through the configured Hugging Face Space from the browser and there
-  is no local labelled phishing test runner in this repository.
+- Phishing metrics are CyberGuard-specific remote inference evaluation,
+  not the external model's published training/evaluation metrics.
+- ATO metrics are engineering-validation metrics, not independent real-world
+  production accuracy.
+- The three modules use different evaluation sources and must not be averaged
+  into one overall accuracy score.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 import sys
@@ -29,6 +36,7 @@ sys.path.insert(0, str(ROOT))
 
 from digital_impersonation.digital_impersonation_service import analyze_digital_impersonation
 from account_takeover.account_takeover_service import analyze_account_takeover
+from phishing_benchmark import run as run_phishing_benchmark
 
 
 def binary_metrics(expected, predicted):
@@ -171,30 +179,43 @@ def run_account_takeover():
     }
 
 
-def run_phishing_status():
-    return {
-        "module": "Phishing",
-        "status": "not_locally_benchmarked",
-        "reason": (
-            "The current repository connects phishing inference to the configured "
-            "Hugging Face Space from the browser and does not contain a local labelled "
-            "phishing evaluation runner. No phishing accuracy/precision/recall/F1 is "
-            "invented by this suite."
-        ),
-    }
+def run_phishing(sample_size: int):
+    return run_phishing_benchmark(sample_size=sample_size, seed=42)
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Run the CyberGuard unified evaluation suite.")
+    parser.add_argument(
+        "--skip-phishing",
+        action="store_true",
+        help="Run only the local Digital Impersonation and ATO evaluations.",
+    )
+    parser.add_argument(
+        "--phishing-samples",
+        type=int,
+        default=100,
+        help="Balanced total phishing cases sent to the Hugging Face Space (default: 100).",
+    )
+    args = parser.parse_args()
+
     report = {
-        "suite": "CyberGuard Evaluation Suite v1",
+        "suite": "CyberGuard Evaluation Suite v2",
         "scope": "Independent evaluation of existing detection services; production code is not modified by the benchmark.",
         "digital_impersonation": run_digital_impersonation(),
         "account_takeover": run_account_takeover(),
-        "phishing": run_phishing_status(),
     }
 
+    if args.skip_phishing:
+        report["phishing"] = {
+            "module": "Phishing",
+            "status": "skipped",
+            "reason": "Phishing benchmark was skipped with --skip-phishing.",
+        }
+    else:
+        report["phishing"] = run_phishing(args.phishing_samples)
+
     output_path = EVALUATION_DIR / "latest_benchmark_report.json"
-    output_path.write_text(json.dumps(report, indent=2))
+    output_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps(report, indent=2))
     print(f"\nSaved report: {output_path}")
 
