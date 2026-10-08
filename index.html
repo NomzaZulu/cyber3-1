@@ -496,23 +496,77 @@
                     </div>
 
 
-                    <!-- Validation Benchmark -->
+                    <!-- Unified Evaluation -->
 
                     <div class="panel benchmark-panel">
                         <div class="panel-header">
                             <div>
                                 <span class="panel-kicker">DETECTION PERFORMANCE</span>
-                                <h3>Detection Benchmark</h3>
+                                <h3>CyberGuard Evaluation</h3>
                             </div>
-                            <span class="panel-live">120 MESSAGE SET</span>
+                            <span class="panel-live">UNIFIED EVALUATION SUITE</span>
                         </div>
-                        <div class="benchmark-grid">
-                            <div><span>PRECISION</span><strong>98.5%</strong></div>
-                            <div><span>RECALL</span><strong>82.5%</strong></div>
-                            <div><span>F1 SCORE</span><strong>89.8%</strong></div>
-                            <div><span>BENIGN HIGH</span><strong>0 / 20</strong></div>
+
+                        <div class="benchmark-modules">
+
+                            <div class="benchmark-module">
+                                <div class="benchmark-module-header">
+                                    <div>
+                                        <span class="benchmark-module-kicker">DIGITAL IMPERSONATION</span>
+                                        <strong>Message Detection Engine</strong>
+                                    </div>
+                                    <span class="benchmark-module-status">100 SCORED</span>
+                                </div>
+
+                                <div class="benchmark-metrics">
+                                    <div><span>ACCURACY</span><strong>85.0%</strong></div>
+                                    <div><span>PRECISION</span><strong>98.5%</strong></div>
+                                    <div><span>RECALL</span><strong>82.5%</strong></div>
+                                    <div><span>F1 SCORE</span><strong>89.8%</strong></div>
+                                    <div><span>FPR</span><strong>5.0%</strong></div>
+                                    <div><span>BENIGN HIGH</span><strong>0 / 20</strong></div>
+                                </div>
+                            </div>
+
+                            <div class="benchmark-module">
+                                <div class="benchmark-module-header">
+                                    <div>
+                                        <span class="benchmark-module-kicker">ACCOUNT TAKEOVER</span>
+                                        <strong>Behavioural Detection Engine</strong>
+                                    </div>
+                                    <span class="benchmark-module-status">24 SCENARIOS</span>
+                                </div>
+
+                                <div class="benchmark-metrics">
+                                    <div><span>ACCURACY</span><strong>100%</strong></div>
+                                    <div><span>PRECISION</span><strong>100%</strong></div>
+                                    <div><span>RECALL</span><strong>100%</strong></div>
+                                    <div><span>F1 SCORE</span><strong>100%</strong></div>
+                                    <div><span>FPR</span><strong>0%</strong></div>
+                                    <div><span>TP / TN</span><strong>12 / 12</strong></div>
+                                </div>
+
+                                <p class="benchmark-module-note">Controlled synthetic validation covering all six ATO detectors; not an independent real-world accuracy benchmark.</p>
+                            </div>
+
+                            <div class="benchmark-module benchmark-module-unavailable">
+                                <div class="benchmark-module-header">
+                                    <div>
+                                        <span class="benchmark-module-kicker">PHISHING</span>
+                                        <strong>AI Detection Engine</strong>
+                                    </div>
+                                    <span class="benchmark-module-status muted">NOT LOCAL</span>
+                                </div>
+
+                                <div class="benchmark-unavailable-content">
+                                    <strong>Not locally benchmarked</strong>
+                                    <span>Current phishing inference runs through the configured Hugging Face Space, so this evaluation suite does not invent local performance metrics.</span>
+                                </div>
+                            </div>
+
                         </div>
-                        <p class="benchmark-note">Digital Impersonation benchmark against the labelled 120-message evaluation set. Borderline cases are reported separately; these figures are local engineering validation results, not independent model certification.</p>
+
+                        <p class="benchmark-note">CyberGuard's evaluation suite measures the individual detection engines using their available labelled or controlled test data. These results are engineering validation figures, not a single overall model accuracy or independent certification.</p>
                     </div>
 
 
