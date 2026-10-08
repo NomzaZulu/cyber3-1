@@ -8,9 +8,10 @@ rules, or production datasets.
 Evaluation sources:
 - Digital Impersonation: bundled labelled CSV.
 - Account Takeover: frozen controlled synthetic scenario set.
-- Phishing: balanced sample from the public ealvaradob/phishing-dataset test
-  set sent through the same Hugging Face Space and /analyze_message endpoint
-  used by the CyberGuard frontend.
+- Phishing: balanced sample from the historical ealvaradob/phishing-dataset
+  test split sent through the same Hugging Face Space and /analyze_message
+  endpoint used by the CyberGuard frontend. The test split is pinned inside
+  phishing_benchmark.py because it is no longer on the dataset main branch.
 
 Important:
 - Phishing metrics are CyberGuard-specific remote inference evaluation,
@@ -212,7 +213,18 @@ def main():
             "reason": "Phishing benchmark was skipped with --skip-phishing.",
         }
     else:
-        report["phishing"] = run_phishing(args.phishing_samples)
+        try:
+            report["phishing"] = run_phishing(args.phishing_samples)
+        except Exception as exc:
+            report["phishing"] = {
+                "module": "Phishing",
+                "status": "failed",
+                "error": str(exc),
+                "warning": (
+                    "The remote phishing benchmark did not complete. No phishing metrics "
+                    "were invented or copied from an older report."
+                ),
+            }
 
     output_path = EVALUATION_DIR / "latest_benchmark_report.json"
     output_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
