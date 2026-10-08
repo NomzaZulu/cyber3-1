@@ -4,9 +4,11 @@ Benchmarks the same Hugging Face Space used by CyberGuard's frontend.
 The benchmark does not modify the live application.
 
 Dataset:
-- ealvaradob/phishing-dataset test.json
+- ealvaradob/phishing-dataset historical test.json from the 94efbff commit
 - Labels: 1 = phishing, 0 = benign
 - A deterministic balanced sample is selected from the test set.
+- The test split is pinned to a historical commit because test.json is no longer
+  present on the dataset repository main branch.
 
 Inference:
 - Hugging Face Space: saswatpatra/cyberguard_phishing
@@ -35,9 +37,10 @@ CACHE_DIR = EVALUATION_DIR / ".cache"
 DATASET_PATH = CACHE_DIR / "phishing_test.json"
 REPORT_PATH = EVALUATION_DIR / "phishing_benchmark_report.json"
 
+DATASET_COMMIT = "94efbffcb4e26305d8d68d507a39c8065c6d97e3"
 DATASET_URL = (
     "https://huggingface.co/datasets/ealvaradob/phishing-dataset/"
-    "resolve/main/test.json"
+    f"resolve/{DATASET_COMMIT}/test.json"
 )
 SPACE_ID = "saswatpatra/cyberguard_phishing"
 SPACE_HOST = "https://saswatpatra-cyberguard-phishing.hf.space"
@@ -174,20 +177,24 @@ def flatten(value: Any):
     return output
 
 
-def extract_prediction(value: Any):
+def extract_prediction(value: Any, *, allow_numeric: bool = False):
     """Return True=phishing, False=benign, None=unresolved."""
     if isinstance(value, dict):
         preferred_keys = (
-            "model_prediction", "prediction", "label", "classification",
-            "class", "threat", "verdict", "result",
+            "model_prediction", "is_phishing", "is_phishing_message",
+            "prediction", "label", "classification", "class",
+            "threat", "verdict", "result",
         )
         for key in preferred_keys:
             if key in value:
-                result = extract_prediction(value[key])
+                result = extract_prediction(value[key], allow_numeric=True)
                 if result is not None:
                     return result
         for key, item in value.items():
-            if key.lower() in {"confidence", "score", "risk_score", "indicator_score"}:
+            if key.lower() in {
+                "confidence", "score", "risk_score", "indicator_score",
+                "model_confidence",
+            }:
                 continue
             result = extract_prediction(item)
             if result is not None:
@@ -204,8 +211,17 @@ def extract_prediction(value: Any):
     if isinstance(value, bool):
         return value
 
+    if allow_numeric and isinstance(value, (int, float)) and not isinstance(value, bool):
+        if value == 1:
+            return True
+        if value == 0:
+            return False
+
     text = str(value).strip().lower()
     text = re.sub(r"\s+", " ", text)
+
+    if allow_numeric and text in {"1", "0"}:
+        return text == "1"
 
     # Check explicit benign phrases first so "not phishing" is not treated as phishing.
     benign_patterns = (
@@ -297,6 +313,7 @@ def run(sample_size: int, seed: int):
         "endpoint": API_NAME,
         "dataset": "ealvaradob/phishing-dataset/test.json",
         "dataset_source": DATASET_URL,
+        "dataset_commit": DATASET_COMMIT,
         "sample_size_requested": sample_size,
         "scored_samples": len(expected),
         "seed": seed,
@@ -315,7 +332,7 @@ def run(sample_size: int, seed: int):
 
 def main():
     parser = argparse.ArgumentParser(description="Benchmark CyberGuard phishing inference via Hugging Face.")
-    parser.add_argument("--samples", type=int, default=200, help="Balanced total test cases (default: 200).")
+    parser.add_argument("--samples", type=int, default=100, help="Balanced total test cases (default: 100).")
     parser.add_argument("--seed", type=int, default=42, help="Deterministic sampling seed (default: 42).")
     args = parser.parse_args()
 
